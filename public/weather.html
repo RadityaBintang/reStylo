@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>reStylo - Weather</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+    body { 
+      font-family: 'Poppins', sans-serif; 
+      background-color: #f5f5f5; 
+    }
+    .input-card { 
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08); 
+    }
+    .input-field { 
+      transition: all 0.3s ease; 
+      border: 1px solid #e5e7eb; 
+      font-size: 1.125rem; 
+    }
+    .input-field:focus { 
+      border-color: #9ca3af; 
+      box-shadow: 0 0 0 3px rgba(156, 163, 175, 0.2); 
+    }
+    .weather-option {
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .weather-option:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    .weather-option.selected {
+      border-color: #000;
+      background-color: #f3f4f6;
+    }
+  </style>
+</head>
+<body class="flex justify-center items-center min-h-screen bg-gray-100">
+  <div class="container bg-white w-[480px] h-[936px] shadow-md rounded-lg overflow-hidden relative">
+    <div class="border-b border-gray-200 p-6 relative">
+      <a href="main.html" class="absolute left-6 top-1/2 transform -translate-y-1/2 text-xl">←</a>
+    </div>
+    
+    <h1 class="text-2xl font-bold text-center mt-8">What's the Weather?</h1>
+    <p class="text-center text-gray-600 mt-2">Tell us about today's weather</p>
+    
+    <div class="p-6 mt-1 pt-4 flex flex-col justify-center h-full">
+      <div id="errorBox" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+        <span id="errorMessage"></span>
+      </div>
+
+      <form id="weatherForm" class="flex flex-col justify-between h-[600px]">
+        <div>
+          <!-- Weather Type Selection -->
+          <div class="space-y-2 mb-8">
+            <label class="block text-base font-medium text-gray-700 mb-3">Weather Condition</label>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="weather-option border-2 border-gray-300 rounded-lg p-4 text-center" data-weather="sunny">
+                <i class="fas fa-sun text-4xl text-yellow-500 mb-2"></i>
+                <p class="font-medium">Sunny</p>
+              </div>
+              <div class="weather-option border-2 border-gray-300 rounded-lg p-4 text-center" data-weather="cloudy">
+                <i class="fas fa-cloud text-4xl text-gray-500 mb-2"></i>
+                <p class="font-medium">Cloudy</p>
+              </div>
+              <div class="weather-option border-2 border-gray-300 rounded-lg p-4 text-center" data-weather="rainy">
+                <i class="fas fa-cloud-rain text-4xl text-blue-500 mb-2"></i>
+                <p class="font-medium">Rainy</p>
+              </div>
+              <div class="weather-option border-2 border-gray-300 rounded-lg p-4 text-center" data-weather="windy">
+                <i class="fas fa-wind text-4xl text-teal-500 mb-2"></i>
+                <p class="font-medium">Windy</p>
+              </div>
+            </div>
+            <input type="hidden" name="weather" id="weatherInput" required>
+          </div>
+
+          <!-- Temperature Input -->
+          <div class="space-y-2 mt-8">
+            <label class="block text-base font-medium text-gray-700">Temperature (°C)</label>
+            <div class="relative">
+              <input 
+                type="number" 
+                name="temperature" 
+                id="temperatureInput" 
+                class="input-field w-full px-5 py-4 rounded-lg border focus:outline-none focus:ring-1 focus:ring-gray-400" 
+                placeholder="Enter temperature" 
+                step="0.5" 
+                min="0" 
+                max="50" 
+                required
+              >
+              <div class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-base">°C</div>
+            </div>
+          </div>
+        </div>
+
+        <button 
+          type="submit" 
+          class="w-full py-4 px-5 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 mt-10"
+        >
+          Find Recommendations
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('weatherForm');
+    const errorBox = document.getElementById('errorBox');
+    const errorMessage = document.getElementById('errorMessage');
+    const weatherOptions = document.querySelectorAll('.weather-option');
+    const weatherInput = document.getElementById('weatherInput');
+
+    // Weather selection handler
+    weatherOptions.forEach(option => {
+      option.addEventListener('click', function() {
+        weatherOptions.forEach(opt => opt.classList.remove('selected'));
+        this.classList.add('selected');
+        weatherInput.value = this.dataset.weather;
+      });
+    });
+
+    function showError(msg) {
+      errorMessage.innerText = msg;
+      errorBox.classList.remove('hidden');
+    }
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      errorBox.classList.add('hidden');
+
+      const weather = weatherInput.value;
+      const temperature = document.getElementById('temperatureInput').value;
+
+      if (!weather) {
+        return showError('Please select a weather condition.');
+      }
+
+      if (!temperature) {
+        return showError('Temperature must be provided.');
+      }
+
+      localStorage.setItem('weather', weather);
+      localStorage.setItem('temperature', temperature);
+
+      window.location.href = 'weather_recommendation.html';
+    });
+  </script>
+</body>
+</html>

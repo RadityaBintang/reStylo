@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Saved Outfits</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      padding: 0;
+    }
+
+    .header {
+      border-bottom: 1px solid #ccc;
+      padding: 16px 20px;
+      background: white;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .back-link {
+      font-size: 20px;
+      text-decoration: none;
+      color: #333;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .back-link:hover {
+      color: #007BFF;
+    }
+
+    h2 {
+      text-align: center;
+      margin: 30px 0;
+      font-size: 24px;
+      color: #333;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #666;
+    }
+
+    .loading i {
+      font-size: 40px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .outfit-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      padding: 0 20px 40px;
+    }
+
+    .outfit-card {
+      background-color: transparent;
+      border-radius: 12px;
+      padding: 24px;
+      width: 100%;
+      max-width: 320px;
+      text-align: center;
+      transition: opacity 0.3s ease;
+    }
+
+    .outfit-card.removing {
+      opacity: 0;
+      transform: scale(0.8);
+      transition: all 0.3s ease;
+    }
+
+    .outfit-card h3 {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #000;
+    }
+
+    .outfit-card .description {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .outfit-image {
+      width: 80px;
+      height: 80px;
+      margin: 15px auto;
+      background-color: #fff;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .outfit-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .outfit-image i {
+      font-size: 32px;
+      color: #999;
+    }
+
+    .item-label {
+      font-size: 14px;
+      color: #333;
+      margin-top: 8px;
+    }
+
+    .buttons-container {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .btn {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+
+    .btn-edit {
+      background-color: #8b8b8b;
+      color: white;
+    }
+
+    .btn-edit:hover {
+      background-color: #6b6b6b;
+    }
+
+    .btn-delete {
+      background-color: #8b8b8b;
+      color: white;
+    }
+
+    .btn-delete:hover {
+      background-color: #6b6b6b;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: #999;
+    }
+
+    .empty-state i {
+      font-size: 64px;
+      margin-bottom: 20px;
+      color: #ddd;
+    }
+
+    .empty-state p {
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+
+    .empty-state a {
+      color: #007BFF;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .error-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #DC3545;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <a href="/main.html" class="back-link">
+      <span>← Kembali</span>
+    </a>
+  </div>
+
+  <h2>Saved Outfits</h2>
+
+  <div id="loading" class="loading">
+    <i class="fas fa-spinner"></i>
+    <p>Loading your outfits...</p>
+  </div>
+
+  <div id="outfit-container" class="outfit-container" style="display: none;"></div>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', function() {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      
+      if (!token) {
+        alert('Anda harus login untuk melihat saved outfits.');
+        window.location.href = '/login.html';
+        return;
+      }
+
+      loadSavedOutfits();
+    });
+
+    async function loadSavedOutfits() {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const loadingDiv = document.getElementById('loading');
+      const container = document.getElementById('outfit-container');
+
+      if (!token) {
+        loadingDiv.innerHTML = '<div class="error-state"><i class="fas fa-exclamation-triangle"></i><p>Anda belum login</p></div>';
+        setTimeout(() => {
+          window.location.href = '/login.html';
+        }, 2000);
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/outfit/saved', {
+          headers: {
+            'Authorization': 'Bearer ' + token
+          }
+        });
+
+        loadingDiv.style.display = 'none';
+        container.style.display = 'flex';
+
+        if (!res.ok) {
+          if (res.status === 401 || res.status === 403) {
+            throw new Error('Session expired. Please login again.');
+          }
+          throw new Error('Failed to load outfits');
+        }
+
+        const data = await res.json();
+        container.innerHTML = '';
+
+        if (!Array.isArray(data)) {
+          container.innerHTML = `<div class="error-state"><p>${data.message || 'Data tidak valid.'}</p></div>`;
+          return;
+        }
+
+        if (data.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-tshirt"></i>
+              <p>Tidak ada outfit tersimpan.</p>
+              <a href="/select_outfit.html">Buat outfit baru →</a>
+            </div>
+          `;
+          return;
+        }
+
+        data.forEach(outfit => {
+          const card = document.createElement('div');
+          card.className = 'outfit-card';
+          card.dataset.outfitId = outfit.id;
+
+          const top = outfit.top;
+          const bottom = outfit.bottom;
+
+          card.innerHTML = `
+            <h3>${escapeHTML(outfit.name || 'Outfit Name')}</h3>
+            <div class="description">${escapeHTML(outfit.description || 'Description')}</div>
+
+            <div class="outfit-image">
+              ${top && top.image_url ? 
+                `<img src="${top.image_url}" alt="Top">` : 
+                `<i class="fas fa-image"></i>`
+              }
+            </div>
+            <div class="item-label">Top: ${escapeHTML(top?.name || "outfit's name")}</div>
+
+            <div class="outfit-image">
+              ${bottom && bottom.image_url ? 
+                `<img src="${bottom.image_url}" alt="Bottom">` : 
+                `<i class="fas fa-image"></i>`
+              }
+            </div>
+            <div class="item-label">Bottom: ${escapeHTML(bottom?.name || "outfit's name")}</div>
+
+            <div class="buttons-container">
+              <button class="btn btn-edit" data-top="${top?.id || ''}" data-bottom="${bottom?.id || ''}">
+                Edit
+              </button>
+              <button class="btn btn-delete" data-id="${outfit.id}">
+                Delete
+              </button>
+            </div>
+          `;
+
+          container.appendChild(card);
+        });
+
+        attachEditEvents();
+        attachDeleteEvents();
+
+      } catch (err) {
+        loadingDiv.style.display = 'none';
+        container.style.display = 'flex';
+        container.innerHTML = `<div class="error-state"><i class="fas fa-exclamation-circle"></i><p>${err.message}</p></div>`;
+        
+        console.error(err);
+        
+        if (err.message.includes('login')) {
+          setTimeout(() => {
+            window.location.href = '/login.html';
+          }, 2000);
+        }
+      }
+    }
+
+    function attachEditEvents() {
+      const editButtons = document.querySelectorAll('.btn-edit');
+      editButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          const topId = this.getAttribute('data-top');
+          const bottomId = this.getAttribute('data-bottom');
+
+          if (topId) localStorage.setItem('selected_top', topId);
+          if (bottomId) localStorage.setItem('selected_bottom', bottomId);
+          localStorage.setItem('edit_mode', 'true');
+
+          window.location.href = '/select_outfit.html';
+        });
+      });
+    }
+
+    function attachDeleteEvents() {
+      const deleteButtons = document.querySelectorAll('.btn-delete');
+      deleteButtons.forEach(btn => {
+        btn.addEventListener('click', async function() {
+          const id = this.getAttribute('data-id');
+          const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+          
+          if (!token) {
+            alert('Session expired. Please login again.');
+            window.location.href = '/login.html';
+            return;
+          }
+
+          if (confirm('Yakin ingin menghapus outfit ini?')) {
+            const card = this.closest('.outfit-card');
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            try {
+              const res = await fetch(`/api/outfit/${id}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': 'Bearer ' + token,
+                  'Content-Type': 'application/json'
+                }
+              });
+
+              if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Failed to delete');
+              }
+
+              // Animate and remove
+              card.classList.add('removing');
+              setTimeout(() => {
+                card.remove();
+                
+                // Check if empty
+                const container = document.getElementById('outfit-container');
+                if (container.querySelectorAll('.outfit-card').length === 0) {
+                  container.innerHTML = `
+                    <div class="empty-state">
+                      <i class="fas fa-tshirt"></i>
+                      <p>Tidak ada outfit tersimpan.</p>
+                      <a href="/select_outfit.html">Buat outfit baru →</a>
+                    </div>
+                  `;
+                }
+              }, 300);
+              
+            } catch (err) {
+              alert('Gagal menghapus: ' + err.message);
+              this.disabled = false;
+              this.innerHTML = 'Delete';
+            }
+          }
+        });
+      });
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, function (m) {
+        return ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        })[m];
+      });
+    }
+  </script>
+</body>
+</html>

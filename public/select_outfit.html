@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pilih Outfit – Casual</title>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+          integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+          crossorigin="anonymous"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #fff;
+      color: #333;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 420px;
+      margin: 0 auto;
+      padding-bottom: 88px;
+    }
+
+    .header-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .back-button {
+      font-size: 20px;
+      color: #333;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .favourites-badge {
+      background: #ef4444;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      padding: 16px 20px 8px;
+      text-align: left;
+    }
+
+    .scroll-container {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .scroll-wrapper {
+      display: flex;
+      gap: 16px;
+      padding: 0 16px 20px;
+      width: max-content;
+    }
+
+    .scroll-container::-webkit-scrollbar {
+      display: none;
+    }
+
+    .scroll-card {
+      flex: 0 0 auto;
+      width: 180px;
+      height: 240px;
+      background: #f0f0f0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: transform .15s;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .scroll-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .selected {
+      outline: 3px solid #007bff;
+      transform: scale(.96);
+    }
+
+    .btn-save {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%);
+      padding: 12px 32px;
+      border: none;
+      border-radius: 8px;
+      background: #0d6efd;
+      color: #fff;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
+    }
+
+    h1 {
+      margin: 24px 0 8px;
+      font-size: 28px;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header with back button and favourites badge -->
+<div class="header-container">
+  <a href="javascript:history.back()" class="back-button">
+    <i class="fas fa-arrow-left"></i>
+  </a>
+  <div id="favourites-count" class="favourites-badge" style="display: none;">
+    <i class="fas fa-heart"></i>
+    <span id="fav-count">0</span> Favourites
+  </div>
+  <div style="width: 20px;"></div> <!-- Spacer for centering -->
+</div>
+
+<h1>Pair Your Outfits!</h1>
+
+<div class="container">
+  <!-- Atasan -->
+  <div class="section-title">Atasan</div>
+  <div class="scroll-container">
+    <div id="tops-container" class="scroll-wrapper"></div>
+  </div>
+
+  <!-- Bawahan -->
+  <div class="section-title">Bawahan</div>
+  <div class="scroll-container">
+    <div id="bottoms-container" class="scroll-wrapper"></div>
+  </div>
+</div>
+
+<button id="save-outfit-btn" class="btn-save">Save Outfit</button>
+
+<!-- Font Awesome for icons -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+<script>
+  let selectedTopId = null;
+  let selectedBottomId = null;
+
+  // Check and display favourites count
+  function updateFavouritesCount() {
+    const favourites = JSON.parse(localStorage.getItem('favourites') || '[]');
+    if (favourites.length > 0) {
+      document.getElementById('favourites-count').style.display = 'inline-flex';
+      document.getElementById('fav-count').textContent = favourites.length;
+    }
+  }
+
+  // Call on page load
+  updateFavouritesCount();
+
+  async function fetchItems() {
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      
+      // Tentukan endpoint berdasarkan ketersediaan token
+      const endpoint = token ? '/api/outfit' : '/api/outfit';
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+      const [topsRes, bottomsRes] = await Promise.all([
+        fetch(`${endpoint}/tops/public?category=Casual`),
+        fetch(`${endpoint}/bottoms/public?category=Casual`)
+      ]);
+
+      if (!topsRes.ok || !bottomsRes.ok) {
+        throw new Error('Server response not OK');
+      }
+
+      const tops = await topsRes.json();
+      const bottoms = await bottomsRes.json();
+
+      if (!Array.isArray(tops) || !Array.isArray(bottoms)) {
+        throw new Error('Data format is invalid');
+      }
+
+      renderItems('tops-container', tops, 'top');
+      renderItems('bottoms-container', bottoms, 'bottom');
+    } catch (err) {
+      alert('Gagal memuat data outfit: ' + err.message);
+      console.error(err);
+    }
+  }
+
+  function renderItems(containerId, items, type) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+
+    // Get selected IDs from localStorage
+    const selectedTopId = localStorage.getItem('selected_top');
+    const selectedBottomId = localStorage.getItem('selected_bottom');
+    const fromFavourite = localStorage.getItem('from_favourite');
+
+    items.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'scroll-card';
+      card.dataset.id = item.id;
+      card.dataset.type = type;
+      card.innerHTML = `<img src="${item.image_url}" alt="${item.name}" />`;
+
+      // Auto-select if from favourite
+      if (fromFavourite === 'true') {
+        if (type === 'top' && item.id == selectedTopId) {
+          card.classList.add('selected');
+          selectedTopId = item.id;
+        } else if (type === 'bottom' && item.id == selectedBottomId) {
+          card.classList.add('selected');
+          selectedBottomId = item.id;
+        }
+      }
+
+      card.addEventListener('click', () => {
+        document
+          .querySelectorAll(`.scroll-card[data-type="${type}"]`)
+          .forEach(el => el.classList.remove('selected'));
+
+        card.classList.add('selected');
+        if (type === 'top') {
+          selectedTopId = item.id;
+        } else {
+          selectedBottomId = item.id;
+        }
+      });
+
+      container.appendChild(card);
+    });
+
+    // Set global variables if auto-selected
+    if (fromFavourite === 'true') {
+      if (type === 'top' && selectedTopId) {
+        window.selectedTopId = selectedTopId;
+      } else if (type === 'bottom' && selectedBottomId) {
+        window.selectedBottomId = selectedBottomId;
+      }
+    }
+  }
+
+  document.getElementById('save-outfit-btn').addEventListener('click', () => {
+    if (!selectedTopId || !selectedBottomId) {
+      alert('Silakan pilih atasan dan bawahan terlebih dahulu.');
+      return;
+    }
+
+    // Check if user is logged in before saving
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) {
+      if (confirm('Anda harus login untuk menyimpan outfit. Login sekarang?')) {
+        // Save selection to localStorage for later
+        localStorage.setItem('selected_top', selectedTopId);
+        localStorage.setItem('selected_bottom', selectedBottomId);
+        window.location.href = '/login.html';
+      }
+      return;
+    }
+
+    localStorage.setItem('selected_top', selectedTopId);
+    localStorage.setItem('selected_bottom', selectedBottomId);
+    window.location.href = '/save_outfit_form.html';
+  });
+
+  fetchItems();
+</script>
+
+</body>
+</html>
