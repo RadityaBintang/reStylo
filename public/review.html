@@ -31,7 +31,7 @@
         <a href="recommendation_detail.html" class="text-gray-600 text-xl">
           <i class="fas fa-arrow-left"></i>
         </a>
-        <h1 class="text-xl font-bold text-center flex-1 -ml-6">Reviews</h1>
+        <h1 class="text-xl font-bold text-center flex-1">Reviews</h1>
         <span class="invisible text-xl"><i class="fas fa-user"></i></span>
       </div>
     </div>
@@ -78,7 +78,8 @@
   </div>
 
   <script>
-    const apiBase = 'http://localhost:3000/api'; 
+    // const apiBase = 'http://localhost:3000/api';
+    const apiBase = '/api'; 
     const outfitsId = new URLSearchParams(window.location.search).get('id');
     document.getElementById('outfitsId').value = outfitsId;
 

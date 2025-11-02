@@ -141,7 +141,7 @@
   <div style="width: 20px;"></div> <!-- Spacer for centering -->
 </div>
 
-<h1>All Styles</h1>
+<h1 id="page-title">All Styles</h1>
 
 <div class="container">
   <!-- Atasan -->
@@ -181,13 +181,35 @@
   async function fetchItems() {
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const category = urlParams.get('category');
+      const gender = localStorage.getItem('userGender') || 'Female'; 
       
-      console.log('Fetching items...');
+      const titleEl = document.getElementById('page-title');
+      if (category) {
+        titleEl.textContent = category;
+      } else if (gender === 'Male') {
+        titleEl.textContent = "Men's Styles";
+      } else {
+        titleEl.textContent = "Women's Styles";
+      }
       
-      // Fetch ALL tops and bottoms (no category filter)
+      let topsUrl = `/api/outfit/tops/public?gender=${gender}`;
+      let bottomsUrl = `/api/outfit/bottoms/public?gender=${gender}`;
+
+      if (category) {
+        topsUrl += `&category=${category}`;
+        bottomsUrl += `&category=${category}`;
+        console.log(`Fetching items for gender: ${gender} AND category: ${category}...`);
+      } else {
+        console.log(`Fetching items for gender: ${gender}...`);
+      }
+      
+      // Fetch Data 
       const [topsRes, bottomsRes] = await Promise.all([
-        fetch('/api/outfit/tops/public'),
-        fetch('/api/outfit/bottoms/public')
+        fetch(topsUrl),
+        fetch(bottomsUrl)
       ]);
 
       console.log('Tops response status:', topsRes.status);
@@ -217,7 +239,7 @@
       console.error('Fetch error:', err);
       alert('Gagal memuat data outfit: ' + err.message);
     }
-  }
+  }  
 
   function renderItems(containerId, items, type) {
     const container = document.getElementById(containerId);
