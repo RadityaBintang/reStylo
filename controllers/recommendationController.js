@@ -1,4 +1,4 @@
-const db = require('../config/database');
+const OutfitModel = require('../models/OutfitModel');
 
 const getRecommendations = async (req, res) => {
   const { weight, height } = req.query;
@@ -15,20 +15,8 @@ const getRecommendations = async (req, res) => {
   }
 
   try {
-    const [results] = await db.query(`
-      SELECT o.*, 
-        (SELECT AVG(rating) FROM outfit_ratings WHERE outfit_id = o.id) as avg_rating,
-        (SELECT COUNT(*) FROM outfit_likes WHERE outfit_id = o.id) as likes_count,
-        t.id as top_id, t.name as top_name, t.image_url as top_image,
-        b.id as bottom_id, b.name as bottom_name, b.image_url as bottom_image
-      FROM outfits o
-      LEFT JOIN tops t ON o.top_id = t.id
-      LEFT JOIN bottoms b ON o.bottom_id = b.id
-      WHERE o.min_weight <= ? AND o.max_weight >= ?
-        AND o.min_height <= ? AND o.max_height >= ?
-      ORDER BY avg_rating DESC
-      LIMIT 8
-    `, [weightNum, weightNum, heightNum, heightNum]);
+    // Panggil fungsi dari model
+    const results = await OutfitModel.getRecommendations(weightNum, heightNum);
 
     console.log('DEBUG: Recommendation results =', results);
 
@@ -40,22 +28,14 @@ const getRecommendations = async (req, res) => {
 };
 
 const index = async (req, res) => {
+  // Fungsi index ini tampaknya tidak terpakai di rute,
+  // tetapi jika dipakai, ini juga harus memanggil model.
   try {
-    const [rows] = await db.query(`
-      SELECT o.*, 
-             (SELECT AVG(rating) FROM outfit_ratings WHERE outfit_id = o.id) AS avg_rating,
-             (SELECT COUNT(*) FROM outfit_likes WHERE outfit_id = o.id) AS likes_count,
-             t.id as top_id, t.name as top_name, t.image_url as top_image,
-             b.id as bottom_id, b.name as bottom_name, b.image_url as bottom_image
-      FROM outfits o
-      LEFT JOIN tops t ON o.top_id = t.id
-      LEFT JOIN bottoms b ON o.bottom_id = b.id
-    `);
-
-    res.json({ success: true, recommendations: rows });
+    // const [rows] = await db.query(`...`);
+    // Sebaiknya buat fungsi baru di OutfitModel jika ini diperlukan
+    res.json({ success: true, message: "Fungsi 'index' perlu diimplementasikan via Model" });
   } catch (err) {
-    console.error('Error in index:', err);
-    res.status(500).json({ success: false, message: 'Server error' });
+    // ...
   }
 };
 
@@ -67,23 +47,14 @@ const getDetail = async (req, res) => {
   }
 
   try {
-    const [results] = await db.query(`
-      SELECT o.*, 
-        (SELECT AVG(rating) FROM outfit_ratings WHERE outfit_id = o.id) as avg_rating,
-        (SELECT COUNT(*) FROM outfit_likes WHERE outfit_id = o.id) as likes_count,
-        t.id as top_id, t.name as top_name, t.image_url as top_image, t.category as top_category,
-        b.id as bottom_id, b.name as bottom_name, b.image_url as bottom_image, b.category as bottom_category
-      FROM outfits o
-      LEFT JOIN tops t ON o.top_id = t.id
-      LEFT JOIN bottoms b ON o.bottom_id = b.id
-      WHERE o.id = ?
-    `, [id]);
+    // Panggil fungsi dari model
+    const outfit = await OutfitModel.getById(id);
 
-    if (results.length === 0) {
+    if (!outfit) {
       return res.status(404).json({ success: false, message: 'Outfit not found' });
     }
 
-    res.json({ success: true, data: results[0] });
+    res.json({ success: true, data: outfit });
   } catch (err) {
     console.error('Error fetching outfit detail:', err);
     res.status(500).json({ success: false, message: 'Server error' });

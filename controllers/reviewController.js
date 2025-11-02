@@ -1,14 +1,12 @@
-const db = require('../config/database.js');
+const ReviewModel = require('../models/ReviewModel.js');
 
 
 exports.getReviewsByOutfitId = async (req, res) => {
     const outfitId = req.params.outfitId;
 
     try {
-        const [reviews] = await db.query(
-            'SELECT * FROM reviews WHERE outfits_id = ? ORDER BY created_at DESC',
-            [outfitId]
-        );
+        // Panggil fungsi dari model
+        const reviews = await ReviewModel.getReviewsByOutfitsId(outfitId);
         res.json({ success: true, reviews });
     } catch (err) {
         console.error('Error fetching reviews:', err);
@@ -25,10 +23,8 @@ exports.addReview = async (req, res) => {
     }
 
     try {
-        await db.query(
-            'INSERT INTO reviews (username, rating, comment, outfits_id) VALUES (?, ?, ?, ?)',
-            [username, rating, comment, outfits_id]
-        );
+        // Panggil fungsi dari model
+        await ReviewModel.addReview(username, rating, comment, outfits_id);
         res.json({ success: true, message: 'Review added successfully' });
     } catch (err) {
         console.error('Error adding review:', err);
