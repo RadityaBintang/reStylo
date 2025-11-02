@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pilih Outfit – Casual</title>
+  <title>Pilihan Outfit</title>
 
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"
           integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
@@ -141,7 +141,7 @@
   <div style="width: 20px;"></div> <!-- Spacer for centering -->
 </div>
 
-<h1>Pair Your Outfits!</h1>
+<h1>All Styles</h1>
 
 <div class="container">
   <!-- Atasan -->
@@ -182,21 +182,30 @@
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       
-      // Tentukan endpoint berdasarkan ketersediaan token
-      const endpoint = token ? '/api/outfit' : '/api/outfit';
-      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-
+      console.log('Fetching items...');
+      
+      // Fetch ALL tops and bottoms (no category filter)
       const [topsRes, bottomsRes] = await Promise.all([
-        fetch(`${endpoint}/tops/public?category=Casual`),
-        fetch(`${endpoint}/bottoms/public?category=Casual`)
+        fetch('/api/outfit/tops/public'),
+        fetch('/api/outfit/bottoms/public')
       ]);
 
+      console.log('Tops response status:', topsRes.status);
+      console.log('Bottoms response status:', bottomsRes.status);
+
       if (!topsRes.ok || !bottomsRes.ok) {
+        const topsError = !topsRes.ok ? await topsRes.text() : '';
+        const bottomsError = !bottomsRes.ok ? await bottomsRes.text() : '';
+        console.error('Tops error:', topsError);
+        console.error('Bottoms error:', bottomsError);
         throw new Error('Server response not OK');
       }
 
       const tops = await topsRes.json();
       const bottoms = await bottomsRes.json();
+
+      console.log('Tops loaded:', tops.length);
+      console.log('Bottoms loaded:', bottoms.length);
 
       if (!Array.isArray(tops) || !Array.isArray(bottoms)) {
         throw new Error('Data format is invalid');
@@ -205,8 +214,8 @@
       renderItems('tops-container', tops, 'top');
       renderItems('bottoms-container', bottoms, 'bottom');
     } catch (err) {
+      console.error('Fetch error:', err);
       alert('Gagal memuat data outfit: ' + err.message);
-      console.error(err);
     }
   }
 
@@ -215,8 +224,8 @@
     container.innerHTML = '';
 
     // Get selected IDs from localStorage
-    const selectedTopId = localStorage.getItem('selected_top');
-    const selectedBottomId = localStorage.getItem('selected_bottom');
+    let preSelectedTopId = localStorage.getItem('selected_top');
+    let preSelectedBottomId = localStorage.getItem('selected_bottom');
     const fromFavourite = localStorage.getItem('from_favourite');
 
     items.forEach(item => {
@@ -228,10 +237,10 @@
 
       // Auto-select if from favourite
       if (fromFavourite === 'true') {
-        if (type === 'top' && item.id == selectedTopId) {
+        if (type === 'top' && item.id == preSelectedTopId) {
           card.classList.add('selected');
           selectedTopId = item.id;
-        } else if (type === 'bottom' && item.id == selectedBottomId) {
+        } else if (type === 'bottom' && item.id == preSelectedBottomId) {
           card.classList.add('selected');
           selectedBottomId = item.id;
         }
@@ -252,15 +261,6 @@
 
       container.appendChild(card);
     });
-
-    // Set global variables if auto-selected
-    if (fromFavourite === 'true') {
-      if (type === 'top' && selectedTopId) {
-        window.selectedTopId = selectedTopId;
-      } else if (type === 'bottom' && selectedBottomId) {
-        window.selectedBottomId = selectedBottomId;
-      }
-    }
   }
 
   document.getElementById('save-outfit-btn').addEventListener('click', () => {

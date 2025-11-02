@@ -8,11 +8,21 @@ const getTops = async (category) => {
   return rows;
 };
 
+const getAllTops = async () => {
+  const [rows] = await db.execute('SELECT * FROM tops ORDER BY category, name');
+  return rows;
+};
+
 const getBottoms = async (category) => {
   const [rows] = await db.execute(
     'SELECT * FROM bottoms WHERE category = ?',
     [category]
   );
+  return rows;
+};
+
+const getAllBottoms = async () => {
+  const [rows] = await db.execute('SELECT * FROM bottoms ORDER BY category, name');
   return rows;
 };
 
@@ -99,7 +109,9 @@ const deleteOutfit = async (id) => {
 
 module.exports = {
   getTops,
+  getAllTops,
   getBottoms,
+  getAllBottoms,
   getTopById,
   getBottomById,
   saveOutfit,

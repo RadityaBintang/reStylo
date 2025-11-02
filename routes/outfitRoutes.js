@@ -6,8 +6,16 @@ const { authenticateToken } = require('../middlewares/auth');
 // Routes tanpa auth untuk public access
 router.get('/tops/public', async (req, res) => {
   try {
-    const category = req.query.category || 'Casual';
-    const tops = await require('../models/SaveModel').getTops(category);
+    const category = req.query.category;
+    let tops;
+    
+    if (category) {
+      tops = await require('../models/SaveModel').getTops(category);
+    } else {
+      // Get ALL tops if no category specified
+      tops = await require('../models/SaveModel').getAllTops();
+    }
+    
     res.json(tops);
   } catch (err) {
     console.error(err);
@@ -17,8 +25,16 @@ router.get('/tops/public', async (req, res) => {
 
 router.get('/bottoms/public', async (req, res) => {
   try {
-    const category = req.query.category || 'Casual';
-    const bottoms = await require('../models/SaveModel').getBottoms(category);
+    const category = req.query.category;
+    let bottoms;
+    
+    if (category) {
+      bottoms = await require('../models/SaveModel').getBottoms(category);
+    } else {
+      // Get ALL bottoms if no category specified
+      bottoms = await require('../models/SaveModel').getAllBottoms();
+    }
+    
     res.json(bottoms);
   } catch (err) {
     console.error(err);
