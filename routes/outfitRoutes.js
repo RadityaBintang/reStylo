@@ -3,17 +3,20 @@ const router = express.Router();
 const outfitController = require('../controllers/outfitController');
 const { authenticateToken } = require('../middlewares/auth');
 
+// untuk get model
+const getSaveModel = () => require('../models/SaveModel');
+
 // Routes tanpa auth untuk public access
 router.get('/tops/public', async (req, res) => {
   try {
     const category = req.query.category;
+    const gender = req.query.gender || 'Female'; // Default gender jika tidak ada
     let tops;
     
     if (category) {
-      tops = await require('../models/SaveModel').getTops(category);
+      tops = await getSaveModel().getTops(category, gender);
     } else {
-      // Get ALL tops if no category specified
-      tops = await require('../models/SaveModel').getAllTops();
+      tops = await getSaveModel().getAllTops(gender);
     }
     
     res.json(tops);
@@ -26,13 +29,13 @@ router.get('/tops/public', async (req, res) => {
 router.get('/bottoms/public', async (req, res) => {
   try {
     const category = req.query.category;
+    const gender = req.query.gender || 'Female'; // Default gender jika tidak ada
     let bottoms;
     
     if (category) {
-      bottoms = await require('../models/SaveModel').getBottoms(category);
+      bottoms = await getSaveModel().getBottoms(category, gender);
     } else {
-      // Get ALL bottoms if no category specified
-      bottoms = await require('../models/SaveModel').getAllBottoms();
+      bottoms = await getSaveModel().getAllBottoms(gender);
     }
     
     res.json(bottoms);
@@ -46,7 +49,8 @@ router.get('/bottoms/public', async (req, res) => {
 router.get('/tops', authenticateToken, async (req, res) => {
   try {
     const category = req.query.category || 'Casual';
-    const tops = await require('../models/SaveModel').getTops(category);
+    const gender = req.user.gender || 'Female'; // Jika Anda menyimpan gender di token
+    const tops = await getSaveModel().getTops(category, gender);
     res.json(tops);
   } catch (err) {
     console.error(err);
@@ -57,9 +61,11 @@ router.get('/tops', authenticateToken, async (req, res) => {
 router.get('/bottoms', authenticateToken, async (req, res) => {
   try {
     const category = req.query.category || 'Casual';
-    const bottoms = await require('../models/SaveModel').getBottoms(category);
+    const gender = req.user.gender || 'Female'; // Jika Anda menyimpan gender di token
+    const bottoms = await getSaveModel().getBottoms(category, gender);
     res.json(bottoms);
-  } catch (err) {
+  } catch (err)
+ {
     console.error(err);
     res.status(500).json({ error: 'Failed to load bottoms' });
   }
