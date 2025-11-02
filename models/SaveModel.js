@@ -1,28 +1,65 @@
 const db = require('../config/database');
 
-const getTops = async (category) => {
-  const [rows] = await db.execute(
-    'SELECT * FROM tops WHERE category = ?',
-    [category]
-  );
+// untuk nambahin filter gender
+const addGenderFilter = (query, params, gender) => {
+  if (gender) {
+    query += ' AND (gender = ? OR gender = \'Unisex\')';
+    params.push(gender);
+  }
+  return { query, params };
+};
+
+const getTops = async (category, gender) => {
+  let query = 'SELECT * FROM tops WHERE category = ?';
+  let params = [category];
+  
+  const genderFilter = addGenderFilter(query, params, gender);
+  query = genderFilter.query;
+  params = genderFilter.params;
+
+  const [rows] = await db.execute(query, params);
   return rows;
 };
 
-const getAllTops = async () => {
-  const [rows] = await db.execute('SELECT * FROM tops ORDER BY category, name');
+const getAllTops = async (gender) => {
+  let query = 'SELECT * FROM tops';
+  let params = [];
+
+  if (gender) {
+    query += ' WHERE (gender = ? OR gender = \'Unisex\')';
+    params.push(gender);
+  }
+  
+  query += ' ORDER BY category, name';
+
+  const [rows] = await db.execute(query, params);
   return rows;
 };
 
-const getBottoms = async (category) => {
-  const [rows] = await db.execute(
-    'SELECT * FROM bottoms WHERE category = ?',
-    [category]
-  );
+const getBottoms = async (category, gender) => {
+  let query = 'SELECT * FROM bottoms WHERE category = ?';
+  let params = [category];
+
+  const genderFilter = addGenderFilter(query, params, gender);
+  query = genderFilter.query;
+  params = genderFilter.params;
+
+  const [rows] = await db.execute(query, params);
   return rows;
 };
 
-const getAllBottoms = async () => {
-  const [rows] = await db.execute('SELECT * FROM bottoms ORDER BY category, name');
+const getAllBottoms = async (gender) => {
+  let query = 'SELECT * FROM bottoms';
+  let params = [];
+
+  if (gender) {
+    query += ' WHERE (gender = ? OR gender = \'Unisex\')';
+    params.push(gender);
+  }
+
+  query += ' ORDER BY category, name';
+
+  const [rows] = await db.execute(query, params);
   return rows;
 };
 
